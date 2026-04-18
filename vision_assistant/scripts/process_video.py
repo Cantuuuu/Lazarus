@@ -290,6 +290,7 @@ class VideoProcessor:
         t_start = time.time()
         frame_idx = 0
         triggers_count = 0
+        last_detections: list = []  # para dibujo continuo sin parpadeo
 
         while True:
             ret, frame = cap.read()
@@ -308,9 +309,10 @@ class VideoProcessor:
                 relevant   = [d for d in detections if d["class_name"] in self._whitelist]
                 YoloTrigger._enrich_spatial(relevant, height, width)
                 self._detections_by_frame[frame_idx] = [d.copy() for d in relevant]
+                last_detections = detections  # actualizar para dibujo
             else:
-                # Reusar la ultima deteccion conocida para el dibujado
-                detections = []
+                # Reusar ultima deteccion para dibujar sin parpadeo
+                detections = last_detections
                 relevant   = []
 
             # Heuristicas
