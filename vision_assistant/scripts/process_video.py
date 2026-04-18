@@ -108,6 +108,13 @@ def parse_args() -> argparse.Namespace:
                    help="URL del webhook n8n. Si se omite, no se hace POST.")
     p.add_argument("--user-id", default="lazarus_user_001",
                    help="ID de usuario para el POST (default: lazarus_user_001)")
+    p.add_argument("--mode", default="voice", choices=["voice", "manual"],
+                   help="voice: detecta wake word y hace un POST por comando. "
+                        "manual: transcribe todo el audio y hace un solo POST. "
+                        "(default: voice)")
+    p.add_argument("--yolo-every", type=int, default=1,
+                   help="Ejecutar YOLO cada N frames (default: 1 = todos). "
+                        "Usar 3 o 5 para videos largos.")
     return p.parse_args()
 
 
@@ -184,6 +191,8 @@ class VideoProcessor:
         whisper_model: str = "base",
         n8n_url: str | None = None,
         user_id: str = "lazarus_user_001",
+        mode: str = "voice",
+        yolo_every: int = 1,
     ) -> None:
         self._video_path = video_path
         self._cfg = config
@@ -194,6 +203,8 @@ class VideoProcessor:
         self._whisper_model = whisper_model
         self._n8n_url = n8n_url
         self._user_id = user_id
+        self._mode = mode
+        self._yolo_every = max(1, yolo_every)
 
         # Configuracion YOLO (misma que YoloTrigger)
         yolo_cfg = config["yolo_trigger"]
@@ -273,7 +284,8 @@ class VideoProcessor:
             model_path=model_path,
             confidence_threshold=yolo_cfg.get("confidence_threshold", 0.6),
         )
-        print("  Modelo listo. Procesando...\n")
+        yolo_every_str = f"cada {self._yolo_every} frames" if self._yolo_every > 1 else "todos los frames"
+        print(f"  Modelo listo. Modo: {self._mode.upper()}  YOLO: {yolo_every_str}\n")
 
         t_start = time.time()
         frame_idx = 0
@@ -290,13 +302,16 @@ class VideoProcessor:
             # Acumular buffer de contexto
             self._frame_buffer.append(frame.copy())
 
-            # Inferencia
-            detections = model.detect(frame)
-            relevant   = [d for d in detections if d["class_name"] in self._whitelist]
-            YoloTrigger._enrich_spatial(relevant, height, width)
-
-            # Guardar detecciones activas para cruzar con eventos de voz
-            self._detections_by_frame[frame_idx] = [d.copy() for d in relevant]
+            # YOLO: solo en frames multiplo de yolo_every
+            if frame_idx % self._yolo_every == 0:
+                detections = model.detect(frame)
+                relevant   = [d for d in detections if d["class_name"] in self._whitelist]
+                YoloTrigger._enrich_spatial(relevant, height, width)
+                self._detections_by_frame[frame_idx] = [d.copy() for d in relevant]
+            else:
+                # Reusar la ultima deteccion conocida para el dibujado
+                detections = []
+                relevant   = []
 
             # Heuristicas
             current_classes = {d["class_name"] for d in relevant}
@@ -354,31 +369,44 @@ class VideoProcessor:
         print(f"\n\n  Procesamiento YOLO completo en {elapsed_total:.1f}s")
 
         # ------------------------------------------------------------------
-        # Procesamiento de audio (si el video tiene audio y ffmpeg disponible)
+        # Procesamiento de audio
         # ------------------------------------------------------------------
-        voice_requests = self._process_audio()
         voice_summary = []
-        if voice_requests is not None:
-            voice_summary = voice_requests
-            vr_path = self._output_dir / "voice_requests.json"
-            with vr_path.open("w", encoding="utf-8") as f:
-                json.dump(voice_requests, f, indent=2, ensure_ascii=False)
-            print(f"\n  Peticiones de voz: {len(voice_requests)}  ->  {vr_path.name}")
-            for i, vr in enumerate(voice_requests):
-                print(f"    [{i+1}] t={vr['timestamp_s']:.1f}s  \"{vr['command']}\"")
-                if vr["yolo_detections_at_trigger"]:
-                    dets_str = ", ".join(
-                        f"{d['class_name']} ({d.get('zone','?')}/{d.get('proximity','?')})"
-                        for d in vr["yolo_detections_at_trigger"]
-                    )
-                    print(f"         YOLO: {dets_str}")
 
-            # POST a n8n si se proporcionó URL
-            if self._n8n_url:
-                for vr in voice_requests:
-                    self._post_to_n8n(vr)
+        if self._mode == "manual":
+            manual_req = self._process_audio_manual(src_fps, frame_idx)
+            if manual_req:
+                voice_summary = [manual_req]
+                mr_path = self._output_dir / "manual_request.json"
+                with mr_path.open("w", encoding="utf-8") as f:
+                    json.dump(manual_req, f, indent=2, ensure_ascii=False)
+                print(f"\n  [MANUAL] Transcripcion lista  ->  {mr_path.name}")
+                print(f"    Texto ({len(manual_req['transcription'])} chars): "
+                      f"\"{manual_req['transcription'][:120]}...\"")
+                print(f"    Imagenes: {len(manual_req['context_frame_paths'])} frames")
+                if self._n8n_url:
+                    self._post_to_n8n_manual(manual_req)
         else:
-            print("\n  (Sin procesamiento de audio: ffmpeg no disponible o video sin audio)")
+            voice_requests = self._process_audio()
+            if voice_requests is not None:
+                voice_summary = voice_requests
+                vr_path = self._output_dir / "voice_requests.json"
+                with vr_path.open("w", encoding="utf-8") as f:
+                    json.dump(voice_requests, f, indent=2, ensure_ascii=False)
+                print(f"\n  Peticiones de voz: {len(voice_requests)}  ->  {vr_path.name}")
+                for i, vr in enumerate(voice_requests):
+                    print(f"    [{i+1}] t={vr['timestamp_s']:.1f}s  \"{vr['command']}\"")
+                    if vr["yolo_detections_at_trigger"]:
+                        dets_str = ", ".join(
+                            f"{d['class_name']} ({d.get('zone','?')}/{d.get('proximity','?')})"
+                            for d in vr["yolo_detections_at_trigger"]
+                        )
+                        print(f"         YOLO: {dets_str}")
+                if self._n8n_url:
+                    for vr in voice_requests:
+                        self._post_to_n8n(vr)
+            else:
+                print("\n  (Sin procesamiento de audio: ffmpeg no disponible o video sin audio)")
 
         # Guardar summary
         summary = {
@@ -526,6 +554,139 @@ class VideoProcessor:
             print(f"    Fotos     : {len(ctx_frame_paths)} frames de contexto")
 
         return requests
+
+    def _process_audio_manual(self, src_fps: float, total_frames: int) -> dict | None:
+        """Modo manual: transcribe el audio completo del video sin buscar wake word.
+
+        Returns:
+            Dict con transcripcion completa + paths de imagenes representativas,
+            o None si no hay audio o faltan dependencias.
+        """
+        ffmpeg_exe = _get_ffmpeg_exe()
+        if not ffmpeg_exe:
+            print("\n  [AUDIO] ffmpeg no encontrado.")
+            return None
+
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            print("\n  [AUDIO] faster-whisper no instalado.")
+            return None
+
+        print("\n  [MANUAL] Extrayendo audio...")
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+
+        try:
+            result = subprocess.run(
+                [ffmpeg_exe, "-y", "-i", str(self._video_path),
+                 "-ar", "16000", "-ac", "1", "-vn", str(tmp_path)],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0 or not tmp_path.exists() or tmp_path.stat().st_size < 1000:
+                print("\n  [MANUAL] No se pudo extraer audio (video sin pista de audio?).")
+                tmp_path.unlink(missing_ok=True)
+                return None
+
+            print(f"  [MANUAL] Transcribiendo con Whisper ({self._whisper_model})...")
+            whisper = WhisperModel(self._whisper_model, device="cpu", compute_type="int8")
+            segments, info = whisper.transcribe(
+                str(tmp_path),
+                language="es",
+                beam_size=5,
+                vad_filter=True,
+                vad_parameters={"min_silence_duration_ms": 300},
+            )
+            transcription = " ".join(seg.text.strip() for seg in segments).strip()
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+        if not transcription:
+            print("\n  [MANUAL] Transcripcion vacia.")
+            return None
+
+        # Frames representativos: primero los triggers YOLO, luego rellena con
+        # frames equidistantes hasta tener 5
+        trigger_jpgs = sorted(self._output_dir.glob("frame_*.jpg"))
+        # Excluir ctx frames
+        trigger_jpgs = [p for p in trigger_jpgs if "_ctx_" not in p.name]
+
+        selected_paths: list[str] = [p.name for p in trigger_jpgs[:5]]
+
+        # Si hay menos de 5 triggers, completar con frames equidistantes del video
+        if len(selected_paths) < 5:
+            needed = 5 - len(selected_paths)
+            cap = cv2.VideoCapture(str(self._video_path))
+            indices = list(np.linspace(0, total_frames - 1, needed + 2, dtype=int))[1:-1]
+            for i, fidx in enumerate(indices[:needed]):
+                cap.set(cv2.CAP_PROP_POS_FRAMES, int(fidx))
+                ret, frame = cap.read()
+                if ret:
+                    fname = f"manual_frame_{i:03d}.jpg"
+                    cv2.imwrite(str(self._output_dir / fname), frame)
+                    selected_paths.append(fname)
+            cap.release()
+
+        return {
+            "mode":                 "manual",
+            "user_id":              self._user_id,
+            "video":                self._video_path.name,
+            "transcription":        transcription,
+            "transcription_chars":  len(transcription),
+            "context_frame_paths":  selected_paths,
+            "yolo_triggers":        self._trigger_log,
+        }
+
+    def _post_to_n8n_manual(self, manual_request: dict) -> None:
+        """Envia el trigger manual a n8n.
+
+        Payload multipart:
+            input   : transcripcion completa del video
+            user_id : identificador del usuario
+            img0..4 : hasta 5 frames representativos
+        """
+        if not _REQUESTS_AVAILABLE:
+            print("\n  [POST] 'requests' no instalado.")
+            return
+
+        transcription = manual_request["transcription"]
+        ctx_paths = manual_request.get("context_frame_paths", [])[:5]
+
+        data = {
+            "input":   transcription,
+            "user_id": self._user_id,
+        }
+
+        file_handles = []
+        files = []
+        try:
+            for i, fname in enumerate(ctx_paths):
+                full_path = self._output_dir / fname
+                if full_path.exists():
+                    fh = open(full_path, "rb")
+                    file_handles.append(fh)
+                    files.append((f"img{i}", (fname, fh, "image/jpeg")))
+
+            print(f"\n  [POST] Enviando trigger manual a n8n...")
+            print(f"         user_id   : {self._user_id}")
+            print(f"         input     : \"{transcription[:100]}...\"")
+            print(f"         imagenes  : {len(files)}")
+
+            resp = _requests_lib.post(
+                self._n8n_url,
+                data=data,
+                files=files if files else None,
+                timeout=30,
+            )
+            print(f"         status    : {resp.status_code}")
+            print(f"         respuesta : {resp.text[:300]}")
+
+        except Exception as e:
+            print(f"\n  [POST] Error: {e}")
+        finally:
+            for fh in file_handles:
+                fh.close()
 
     def _post_to_n8n(self, voice_request: dict) -> None:
         """Envia una peticion de voz al webhook de n8n.
@@ -992,6 +1153,8 @@ def main() -> None:
         whisper_model=whisper_model,
         n8n_url=args.n8n_url,
         user_id=args.user_id,
+        mode=args.mode,
+        yolo_every=args.yolo_every,
     )
 
     summary = processor.run()
@@ -1012,11 +1175,15 @@ def main() -> None:
                   f"{t['trigger']:<20} [{t['priority']}]")
 
     if summary.get("voice_requests"):
-        print("\n  Peticiones de voz:")
+        print("\n  Peticiones de voz/manual:")
         for vr in summary["voice_requests"]:
-            print(f"    t={vr['timestamp_s']:6.1f}s  \"{vr['command']}\"")
-            if vr["yolo_context_text"]:
-                print(f"             YOLO: {vr['yolo_context_text']}")
+            if vr.get("mode") == "manual":
+                txt = vr.get("transcription", "")
+                print(f"    [MANUAL] {len(txt)} chars: \"{txt[:100]}...\"")
+            else:
+                print(f"    t={vr['timestamp_s']:6.1f}s  \"{vr['command']}\"")
+                if vr.get("yolo_context_text"):
+                    print(f"             YOLO: {vr['yolo_context_text']}")
 
 
 if __name__ == "__main__":
