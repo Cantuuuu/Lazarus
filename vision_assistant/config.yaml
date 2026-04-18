@@ -1,0 +1,82 @@
+camera:
+  device_index: 0
+  width: 1280
+  height: 720
+  fps: 30
+  buffer_seconds: 10
+
+manual_trigger:
+  hotkey: "<ctrl>+<shift>+g"
+
+yolo_trigger:
+  enabled: true
+  model_path: "models/yolov8n.onnx"
+  analysis_fps: 10
+  confidence_threshold: 0.6
+  cooldown_seconds: 5.0
+  stability_frames: 3
+  stability_window: 5
+  class_whitelist:
+    - person
+    - car
+    - bicycle
+    - motorcycle
+    - bus
+    - truck
+    - traffic light
+    - stop sign
+    - bench
+    - chair
+    - door
+
+  # Prioridades por clase (urgent / important / informative)
+  priority_cooldowns:
+    urgent: 2
+    important: 5
+    informative: 15
+  class_priority:
+    car: urgent
+    motorcycle: urgent
+    bicycle: urgent
+    bus: urgent
+    truck: urgent
+    person: important
+    traffic light: important
+    stop sign: important
+    bench: informative
+    chair: informative
+    door: informative
+
+  # Deteccion de cambio de escena (histograma HSV)
+  scene_change_enabled: true
+  scene_change_threshold: 0.45
+  scene_change_cooldown: 10
+
+  # Deteccion de cambio en cantidad de objetos
+  count_change_enabled: true
+  count_change_delta: 2
+  count_change_cooldown: 10
+
+  # Resumen periodico del entorno
+  summary_enabled: true
+  summary_interval_seconds: 30
+
+  # Frames de contexto para Gemini
+  context_frames_count: 5
+
+voice_trigger:
+  enabled: true
+  wake_word_model: "alexa"
+  wake_word_threshold: 0.5
+  recording_seconds: 4
+  whisper_model: "base"
+  whisper_language: "es"
+  sample_rate: 16000
+
+dispatcher:
+  dedupe_window_seconds: 1.0
+  output_dir: "output"
+
+logging:
+  level: "INFO"
+  file: "logs/app.log"

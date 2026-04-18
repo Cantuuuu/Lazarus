@@ -1,0 +1,22 @@
+# Visión y modelos
+opencv-python>=4.8.0
+numpy>=1.24.0
+ultralytics>=8.0.0         # solo para exportar YOLOv8 a ONNX, no se usa en runtime
+
+# Inferencia portable (CUDA en dev, CPU en Pi — mismo API)
+onnxruntime-gpu>=1.16.0    # en Orange Pi 5 reemplazar por onnxruntime
+
+# Hotkey global
+pynput>=1.7.6
+
+# Audio y voz
+openwakeword>=0.6.0
+faster-whisper>=1.0.0
+sounddevice>=0.4.6
+
+# Config y utilidades
+pyyaml>=6.0
+loguru>=0.7.0
+
+# Testing
+pytest>=7.4.0
