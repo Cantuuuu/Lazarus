@@ -1,0 +1,487 @@
+[
+    {
+        "updatedAt": "2026-04-18T17:44:13.264Z",
+        "createdAt": "2026-04-18T05:56:22.320Z",
+        "id": "EoPOqguu3HiNZZdg",
+        "name": "Send Message To Emergency Contact",
+        "description": null,
+        "active": true,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "workflowInputs": {
+                        "values": [
+                            {
+                                "name": "Message"
+                            },
+                            {
+                                "name": "imgs",
+                                "type": "array"
+                            }
+                        ]
+                    }
+                },
+                "type": "n8n-nodes-base.executeWorkflowTrigger",
+                "typeVersion": 1.1,
+                "position": [
+                    0,
+                    0
+                ],
+                "id": "4398f2c7-7ead-4038-9143-2bd8c7066846",
+                "name": "When Executed by Another Workflow"
+            },
+            {
+                "parameters": {
+                    "operation": "get",
+                    "dataTableId": {
+                        "__rl": true,
+                        "value": "zgJNj7QLpBlERgS7",
+                        "mode": "list",
+                        "cachedResultName": "Lazaro Emergency Contacts",
+                        "cachedResultUrl": "/projects/nxByLlxh0sEH3KsG/datatables/zgJNj7QLpBlERgS7"
+                    },
+                    "returnAll": true
+                },
+                "type": "n8n-nodes-base.dataTable",
+                "typeVersion": 1.1,
+                "position": [
+                    208,
+                    0
+                ],
+                "id": "545feac3-711c-4065-a569-6dd5cbde9e31",
+                "name": "Get row(s)"
+            },
+            {
+                "parameters": {
+                    "resource": "messages-api",
+                    "instanceName": "Test Sebas",
+                    "remoteJid": "=521{{ $json.Phone }}",
+                    "messageText": "={{ $('When Executed by Another Workflow').item.json.Message }}",
+                    "options_message": {}
+                },
+                "type": "n8n-nodes-evolution-api.evolutionApi",
+                "typeVersion": 1,
+                "position": [
+                    416,
+                    0
+                ],
+                "id": "06daf76e-87b6-4a2c-aca9-8b44c6726437",
+                "name": "Enviar texto",
+                "credentials": {
+                    "evolutionApi": {
+                        "id": "TxjZTKd2P6APzJc8",
+                        "name": "Evolution account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "conditions": {
+                        "options": {
+                            "caseSensitive": true,
+                            "leftValue": "",
+                            "typeValidation": "strict",
+                            "version": 3
+                        },
+                        "conditions": [
+                            {
+                                "id": "9c45c8b3-09ac-4cdd-8b14-29b71fd0b40b",
+                                "leftValue": "={{ $('When Executed by Another Workflow').item.json.imgs.imgs }}",
+                                "rightValue": "",
+                                "operator": {
+                                    "type": "array",
+                                    "operation": "notEmpty",
+                                    "singleValue": true
+                                }
+                            }
+                        ],
+                        "combinator": "and"
+                    },
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.if",
+                "typeVersion": 2.3,
+                "position": [
+                    608,
+                    0
+                ],
+                "id": "6ab5bf23-56d7-42de-9bbb-70b9293bae72",
+                "name": "If"
+            },
+            {
+                "parameters": {
+                    "resource": "messages-api",
+                    "operation": "send-image",
+                    "instanceName": "Test Sebas",
+                    "remoteJid": "=521{{ $('Get row(s)').item.json.Phone }}",
+                    "media": "={{ $json.i }}",
+                    "options_message": {}
+                },
+                "type": "n8n-nodes-evolution-api.evolutionApi",
+                "typeVersion": 1,
+                "position": [
+                    1008,
+                    -96
+                ],
+                "id": "f6dcd86f-49f7-4971-bda9-15a8d3bae562",
+                "name": "Enviar imagem",
+                "credentials": {
+                    "evolutionApi": {
+                        "id": "TxjZTKd2P6APzJc8",
+                        "name": "Evolution account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "jsCode": "return $('When Executed by Another Workflow').first().json.imgs.imgs.map(i => ({i}))"
+                },
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
+                "position": [
+                    816,
+                    -96
+                ],
+                "id": "3d460d72-0a94-4dfb-936d-2845733e8da2",
+                "name": "Code in JavaScript"
+            }
+        ],
+        "connections": {
+            "When Executed by Another Workflow": {
+                "main": [
+                    [
+                        {
+                            "node": "Get row(s)",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Get row(s)": {
+                "main": [
+                    [
+                        {
+                            "node": "Enviar texto",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Enviar texto": {
+                "main": [
+                    [
+                        {
+                            "node": "If",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "If": {
+                "main": [
+                    [
+                        {
+                            "node": "Code in JavaScript",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Enviar imagem": {
+                "main": [
+                    []
+                ]
+            },
+            "Code in JavaScript": {
+                "main": [
+                    [
+                        {
+                            "node": "Enviar imagem",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "binaryMode": "separate",
+            "availableInMCP": false
+        },
+        "staticData": null,
+        "meta": {
+            "templateCredsSetupCompleted": true
+        },
+        "pinData": {
+            "When Executed by Another Workflow": [
+                {
+                    "json": {
+                        "Message": "Test Message",
+                        "imgs": [
+                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAwAI/AL+hc2rNAAAAABJRU5ErkJggg=="
+                        ]
+                    }
+                }
+            ]
+        },
+        "versionId": "c7565e3c-4f29-4283-8fd6-eb1f2d2bf6fa",
+        "activeVersionId": "c7565e3c-4f29-4283-8fd6-eb1f2d2bf6fa",
+        "versionCounter": 155,
+        "triggerCount": 0,
+        "shared": [
+            {
+                "updatedAt": "2026-04-18T05:56:22.320Z",
+                "createdAt": "2026-04-18T05:56:22.320Z",
+                "role": "workflow:owner",
+                "workflowId": "EoPOqguu3HiNZZdg",
+                "projectId": "nxByLlxh0sEH3KsG",
+                "project": {
+                    "updatedAt": "2026-04-18T04:36:38.779Z",
+                    "createdAt": "2026-04-18T03:58:37.449Z",
+                    "id": "nxByLlxh0sEH3KsG",
+                    "name": "Diego Sebastian Cruz Cervantes <lmonkeys871@gmail.com>",
+                    "type": "personal",
+                    "icon": null,
+                    "description": null,
+                    "creatorId": "c0563680-55c8-4944-8a42-e7f4fa8c9260"
+                }
+            }
+        ],
+        "tags": [
+            {
+                "updatedAt": "2026-04-18T15:31:11.805Z",
+                "createdAt": "2026-04-18T15:31:11.805Z",
+                "id": "k54cKUVNUUKgg9QS",
+                "name": "mcp tool"
+            }
+        ],
+        "activeVersion": {
+            "updatedAt": "2026-04-18T17:46:43.383Z",
+            "createdAt": "2026-04-18T17:44:13.265Z",
+            "versionId": "c7565e3c-4f29-4283-8fd6-eb1f2d2bf6fa",
+            "workflowId": "EoPOqguu3HiNZZdg",
+            "nodes": [
+                {
+                    "parameters": {
+                        "workflowInputs": {
+                            "values": [
+                                {
+                                    "name": "Message"
+                                },
+                                {
+                                    "name": "imgs",
+                                    "type": "array"
+                                }
+                            ]
+                        }
+                    },
+                    "type": "n8n-nodes-base.executeWorkflowTrigger",
+                    "typeVersion": 1.1,
+                    "position": [
+                        0,
+                        0
+                    ],
+                    "id": "4398f2c7-7ead-4038-9143-2bd8c7066846",
+                    "name": "When Executed by Another Workflow"
+                },
+                {
+                    "parameters": {
+                        "operation": "get",
+                        "dataTableId": {
+                            "__rl": true,
+                            "value": "zgJNj7QLpBlERgS7",
+                            "mode": "list",
+                            "cachedResultName": "Lazaro Emergency Contacts",
+                            "cachedResultUrl": "/projects/nxByLlxh0sEH3KsG/datatables/zgJNj7QLpBlERgS7"
+                        },
+                        "returnAll": true
+                    },
+                    "type": "n8n-nodes-base.dataTable",
+                    "typeVersion": 1.1,
+                    "position": [
+                        208,
+                        0
+                    ],
+                    "id": "545feac3-711c-4065-a569-6dd5cbde9e31",
+                    "name": "Get row(s)"
+                },
+                {
+                    "parameters": {
+                        "resource": "messages-api",
+                        "instanceName": "Test Sebas",
+                        "remoteJid": "=521{{ $json.Phone }}",
+                        "messageText": "={{ $('When Executed by Another Workflow').item.json.Message }}",
+                        "options_message": {}
+                    },
+                    "type": "n8n-nodes-evolution-api.evolutionApi",
+                    "typeVersion": 1,
+                    "position": [
+                        416,
+                        0
+                    ],
+                    "id": "06daf76e-87b6-4a2c-aca9-8b44c6726437",
+                    "name": "Enviar texto",
+                    "credentials": {
+                        "evolutionApi": {
+                            "id": "TxjZTKd2P6APzJc8",
+                            "name": "Evolution account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "conditions": {
+                            "options": {
+                                "caseSensitive": true,
+                                "leftValue": "",
+                                "typeValidation": "strict",
+                                "version": 3
+                            },
+                            "conditions": [
+                                {
+                                    "id": "9c45c8b3-09ac-4cdd-8b14-29b71fd0b40b",
+                                    "leftValue": "={{ $('When Executed by Another Workflow').item.json.imgs.imgs }}",
+                                    "rightValue": "",
+                                    "operator": {
+                                        "type": "array",
+                                        "operation": "notEmpty",
+                                        "singleValue": true
+                                    }
+                                }
+                            ],
+                            "combinator": "and"
+                        },
+                        "options": {}
+                    },
+                    "type": "n8n-nodes-base.if",
+                    "typeVersion": 2.3,
+                    "position": [
+                        608,
+                        0
+                    ],
+                    "id": "6ab5bf23-56d7-42de-9bbb-70b9293bae72",
+                    "name": "If"
+                },
+                {
+                    "parameters": {
+                        "resource": "messages-api",
+                        "operation": "send-image",
+                        "instanceName": "Test Sebas",
+                        "remoteJid": "=521{{ $('Get row(s)').item.json.Phone }}",
+                        "media": "={{ $json.i }}",
+                        "options_message": {}
+                    },
+                    "type": "n8n-nodes-evolution-api.evolutionApi",
+                    "typeVersion": 1,
+                    "position": [
+                        1008,
+                        -96
+                    ],
+                    "id": "f6dcd86f-49f7-4971-bda9-15a8d3bae562",
+                    "name": "Enviar imagem",
+                    "credentials": {
+                        "evolutionApi": {
+                            "id": "TxjZTKd2P6APzJc8",
+                            "name": "Evolution account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "jsCode": "return $('When Executed by Another Workflow').first().json.imgs.imgs.map(i => ({i}))"
+                    },
+                    "type": "n8n-nodes-base.code",
+                    "typeVersion": 2,
+                    "position": [
+                        816,
+                        -96
+                    ],
+                    "id": "3d460d72-0a94-4dfb-936d-2845733e8da2",
+                    "name": "Code in JavaScript"
+                }
+            ],
+            "connections": {
+                "When Executed by Another Workflow": {
+                    "main": [
+                        [
+                            {
+                                "node": "Get row(s)",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Get row(s)": {
+                    "main": [
+                        [
+                            {
+                                "node": "Enviar texto",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Enviar texto": {
+                    "main": [
+                        [
+                            {
+                                "node": "If",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "If": {
+                    "main": [
+                        [
+                            {
+                                "node": "Code in JavaScript",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Enviar imagem": {
+                    "main": [
+                        []
+                    ]
+                },
+                "Code in JavaScript": {
+                    "main": [
+                        [
+                            {
+                                "node": "Enviar imagem",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                }
+            },
+            "authors": "Diego Sebastian Cruz Cervantes",
+            "name": "Version c7565e3c",
+            "description": "",
+            "autosaved": true,
+            "workflowPublishHistory": [
+                {
+                    "createdAt": "2026-04-18T17:46:43.378Z",
+                    "id": 47,
+                    "workflowId": "EoPOqguu3HiNZZdg",
+                    "versionId": "c7565e3c-4f29-4283-8fd6-eb1f2d2bf6fa",
+                    "event": "activated",
+                    "userId": "c0563680-55c8-4944-8a42-e7f4fa8c9260"
+                }
+            ]
+        }
+    }
+]

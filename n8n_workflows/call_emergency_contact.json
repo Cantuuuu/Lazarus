@@ -1,0 +1,181 @@
+[
+    {
+        "updatedAt": "2026-04-18T19:11:18.465Z",
+        "createdAt": "2026-04-18T17:51:14.794Z",
+        "id": "tTp0Dx7yzMrydKGi",
+        "name": "Call Emergency Contacts",
+        "description": null,
+        "active": false,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "workflowInputs": {
+                        "values": [
+                            {
+                                "name": "Message"
+                            },
+                            {
+                                "name": "imgs",
+                                "type": "array"
+                            },
+                            {
+                                "name": "img_indexs",
+                                "type": "any"
+                            }
+                        ]
+                    }
+                },
+                "type": "n8n-nodes-base.executeWorkflowTrigger",
+                "typeVersion": 1.1,
+                "position": [
+                    160,
+                    -96
+                ],
+                "id": "0dc9541d-d1c6-4a58-b27c-8c03fe89111a",
+                "name": "When Executed by Another Workflow"
+            },
+            {
+                "parameters": {
+                    "resource": "speech",
+                    "voice": {
+                        "__rl": true,
+                        "mode": "list",
+                        "value": null
+                    },
+                    "text": "={{ $json.Message }}",
+                    "additionalOptions": {},
+                    "requestOptions": {}
+                },
+                "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+                "typeVersion": 1,
+                "position": [
+                    544,
+                    -96
+                ],
+                "id": "1bf84a33-0a1e-4180-8f70-43f5f3b95a7d",
+                "name": "Convert text to speech"
+            },
+            {
+                "parameters": {
+                    "resource": "call",
+                    "to": "={{ $('Get row(s)').item.json.Phone }}",
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.twilio",
+                "typeVersion": 1,
+                "position": [
+                    720,
+                    -96
+                ],
+                "id": "40043628-3929-49c0-9600-c808ae3e002c",
+                "name": "Make a call"
+            },
+            {
+                "parameters": {
+                    "operation": "get",
+                    "dataTableId": {
+                        "__rl": true,
+                        "value": "zgJNj7QLpBlERgS7",
+                        "mode": "list",
+                        "cachedResultName": "Lazaro Emergency Contacts",
+                        "cachedResultUrl": "/projects/nxByLlxh0sEH3KsG/datatables/zgJNj7QLpBlERgS7"
+                    }
+                },
+                "type": "n8n-nodes-base.dataTable",
+                "typeVersion": 1.1,
+                "position": [
+                    352,
+                    -96
+                ],
+                "id": "4ae96d7f-512e-4c31-9527-f4226ee4e443",
+                "name": "Get row(s)"
+            }
+        ],
+        "connections": {
+            "When Executed by Another Workflow": {
+                "main": [
+                    [
+                        {
+                            "node": "Get row(s)",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Convert text to speech": {
+                "main": [
+                    [
+                        {
+                            "node": "Make a call",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Get row(s)": {
+                "main": [
+                    [
+                        {
+                            "node": "Convert text to speech",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "binaryMode": "separate",
+            "availableInMCP": false
+        },
+        "staticData": null,
+        "meta": {
+            "templateCredsSetupCompleted": true
+        },
+        "pinData": {
+            "When Executed by Another Workflow": [
+                {
+                    "json": {
+                        "Message": "Test Message"
+                    }
+                }
+            ]
+        },
+        "versionId": "fcbc2ea4-25a5-4111-9fb0-cfaba6224945",
+        "activeVersionId": null,
+        "versionCounter": 20,
+        "triggerCount": 0,
+        "shared": [
+            {
+                "updatedAt": "2026-04-18T17:51:14.794Z",
+                "createdAt": "2026-04-18T17:51:14.794Z",
+                "role": "workflow:owner",
+                "workflowId": "tTp0Dx7yzMrydKGi",
+                "projectId": "nxByLlxh0sEH3KsG",
+                "project": {
+                    "updatedAt": "2026-04-18T04:36:38.779Z",
+                    "createdAt": "2026-04-18T03:58:37.449Z",
+                    "id": "nxByLlxh0sEH3KsG",
+                    "name": "Diego Sebastian Cruz Cervantes <lmonkeys871@gmail.com>",
+                    "type": "personal",
+                    "icon": null,
+                    "description": null,
+                    "creatorId": "c0563680-55c8-4944-8a42-e7f4fa8c9260"
+                }
+            }
+        ],
+        "tags": [
+            {
+                "updatedAt": "2026-04-18T15:31:11.805Z",
+                "createdAt": "2026-04-18T15:31:11.805Z",
+                "id": "k54cKUVNUUKgg9QS",
+                "name": "mcp tool"
+            }
+        ],
+        "activeVersion": null
+    }
+]

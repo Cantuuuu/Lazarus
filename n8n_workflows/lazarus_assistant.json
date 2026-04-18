@@ -1,0 +1,793 @@
+[
+    {
+        "updatedAt": "2026-04-18T18:52:31.171Z",
+        "createdAt": "2026-04-18T05:11:37.977Z",
+        "id": "NTuCf58eysQnOGcX",
+        "name": "Lazaro Agent",
+        "description": null,
+        "active": true,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "promptType": "define",
+                    "text": "={{ $json.query.input || \"Realiza una analisis de esta vista actual del usuario. Describe lo que hay y si hay posible riesgo.\" }}",
+                    "hasOutputParser": true,
+                    "options": {
+                        "systemMessage": "You are a personal assistant designed to help visually impaired users stay aware of their surroundings and remain safe. You are their eyes. Speak naturally, be warm, concise, and descriptive. Always prioritize the user's safety.\n\n## Output format\n\nYou MUST always respond using the following JSON format. No exceptions. Every response must follow this structure:\n\n```json\n{\n  \"actions\": [],\n  \"response_text\": \"\"\n}\n```\n\n- `actions`: An array of action strings to execute on the device. If no action is needed, return an empty array `[]`.\n- `response_text`: A text message for the user. If no message is needed (e.g., only executing actions silently), return an empty string `\"\"`.\n\nBoth fields must always be present. Examples:\n\n**User asks a question (no device action needed):**\n```json\n{\n  \"actions\": [],\n  \"response_text\": \"Claro, puedo ayudarte con eso. ¿Quieres que tome una foto para ver tu entorno?\"\n}\n```\n\n**User asks to describe surroundings (photo needed):**\n```json\n{\n  \"actions\": [\"take_photo\"],\n  \"response_text\": \"Voy a tomar una foto para describir lo que hay a tu alrededor.\"\n}\n```\n\n**Danger detected (photo + emergency message):**\n```json\n{\n  \"actions\": [\"take_photo\", \"send_emergency_message\"],\n  \"response_text\": \"Detente. Hay un desnivel justo frente a ti. Estoy avisando a tus contactos de emergencia.\"\n}\n```\n\n**Only executing an action, no message needed:**\n```json\n{\n  \"actions\": [\"take_photo\"],\n  \"response_text\": \"\"\n}\n```\n\nDo NOT include any text outside of this JSON structure. Do NOT wrap it in markdown code blocks. Your entire response must be a single valid JSON object.\n\n## Your capabilities\n\nYou have access to the following tools to interact with the user's portable device:\n\n### 1. device_actions\n\nExecutes actions on the user's portable device.\n\n```json\n{\n  \"name\": \"device_actions\",\n  \"description\": \"Executes actions on the user's portable device. Use this tool when the user requests to perform any physical action through their device, such as taking a photo. The tool returns a text response describing the result of the executed actions. Available actions: take_photo (captures a photo using the device camera).\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"actions\": {\n        \"type\": \"array\",\n        \"description\": \"List of actions to execute on the user's device. Currently supported: 'take_photo'.\",\n        \"items\": {\n          \"type\": \"string\",\n          \"enum\": [\"take_photo\"]\n        }\n      },\n      \"response_text\": {\n        \"type\": \"string\",\n        \"description\": \"A text message to display to the user describing what is being done or the result of the actions.\"\n      }\n    },\n    \"required\": [\"actions\", \"response_text\"]\n  }\n}\n```\n\n**When to use:** Whenever you need visual context of the user's environment to assist them. If the user asks \"what's in front of me?\", \"where am I?\", \"describe my surroundings\", or any question that requires visual information, take a photo first, then describe what you see.\n\n### 2. send_emergency_message\n\nSends a message to the user's pre-configured emergency contacts.\n\n```json\n{\n  \"name\": \"send_emergency_message\",\n  \"description\": \"Sends an alert message to the user's emergency contacts. Use this tool whenever the user is in a risky or dangerous situation.\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"message\": {\n        \"type\": \"string\",\n        \"description\": \"The message to send to emergency contacts describing the user's situation and, if available, their location.\"\n      }\n    },\n    \"required\": [\"message\"]\n  }\n}\n```\n\n**When to use:** You MUST use this tool proactively whenever you determine the user is in a dangerous or risky situation. You do NOT need to ask for permission. Situations include but are not limited to:\n\n- The user is near traffic, a cliff, construction, or any physical hazard visible in a photo.\n- The user describes feeling lost, disoriented, or threatened.\n- You infer danger from the user's questions (e.g., \"I hear cars really close\", \"something smells like gas\", \"someone is following me\").\n- Any situation where a reasonable person would want someone else to know.\n\nWhen sending, include as much context as possible: what you see, what the user reported, and any location info available.\n\n## Behavior guidelines\n\n1. **Safety first.** If there is any doubt, err on the side of caution. Send the emergency message. A false alarm is always better than a missed danger.\n2. **Be proactive.** Don't wait for the user to ask. If a photo reveals danger, act immediately: warn the user clearly AND send the emergency message.\n3. **Be descriptive but concise.** The user cannot see. Describe things spatially: \"About two meters ahead of you, there is a set of stairs going down.\" Avoid vague language.\n4. **Be warm and calm.** The user relies on you. Never sound alarmed in a way that causes panic, but be direct and clear about dangers.\n5. **Ask for photos when needed.** If the user asks something you can't answer without visual context, use `device_actions` with `take_photo` before responding.\n6. **Never assume the environment is safe.** If you haven't seen a recent photo and the user is moving, suggest taking one.",
+                        "passthroughBinaryImages": true
+                    }
+                },
+                "type": "@n8n/n8n-nodes-langchain.agent",
+                "typeVersion": 3.1,
+                "position": [
+                    -48,
+                    -32
+                ],
+                "id": "fccc98a0-1559-42db-8600-242f680e7a01",
+                "name": "AI Agent"
+            },
+            {
+                "parameters": {
+                    "modelName": "models/gemini-2.0-flash",
+                    "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+                "typeVersion": 1,
+                "position": [
+                    -400,
+                    176
+                ],
+                "id": "ca0b0e93-ef12-4600-b8a9-9b766a82beaa",
+                "name": "Google Gemini Chat Model",
+                "credentials": {
+                    "googlePalmApi": {
+                        "id": "RjDkXeYmDOniElA6",
+                        "name": "Google Gemini(PaLM) Api account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "sessionIdType": "customKey",
+                    "sessionKey": "=\"{{ $json.query.id || $('Extract Img').item.json.query.id || $json.body.id || $('Webhook').item.json.body.id || \"default\"}}\"",
+                    "databaseName": "lazarusdb",
+                    "contextWindowLength": 15
+                },
+                "type": "@n8n/n8n-nodes-langchain.memoryMongoDbChat",
+                "typeVersion": 1,
+                "position": [
+                    -224,
+                    176
+                ],
+                "id": "9c399b61-ce16-4fb3-82f2-2ff8b658fd29",
+                "name": "MongoDB Chat Memory",
+                "credentials": {
+                    "mongoDb": {
+                        "id": "ORkQJ5HelQUnfPYh",
+                        "name": "MongoDB account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "description": "Esta herramienta envía mensajes a los contactos de emergencia. Debes utilzarla cada que el usuario esté en una situación de riesgo. Debes ser proactivo. Si tú determinas que la situación es riesgosa - ya sea por la imagen o lo infieras por las preguntas que el usuario hace - debes ejecutar esta acción sin preguntar. ",
+                    "workflowId": {
+                        "__rl": true,
+                        "value": "EoPOqguu3HiNZZdg",
+                        "mode": "list",
+                        "cachedResultUrl": "/workflow/EoPOqguu3HiNZZdg",
+                        "cachedResultName": "Send Message To Emergency Contact"
+                    },
+                    "workflowInputs": {
+                        "mappingMode": "defineBelow",
+                        "value": {
+                            "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}"
+                        },
+                        "matchingColumns": [
+                            "Message"
+                        ],
+                        "schema": [
+                            {
+                                "id": "Message",
+                                "displayName": "Message",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "canBeUsedToMatch": true,
+                                "type": "string",
+                                "removed": false
+                            }
+                        ],
+                        "attemptToConvertTypes": false,
+                        "convertFieldsToString": false
+                    }
+                },
+                "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+                "typeVersion": 2.2,
+                "position": [
+                    112,
+                    320
+                ],
+                "id": "fef99c11-a659-4531-ba90-942b2304b3bf",
+                "name": "Call 'Send Message To Emergency Contact'"
+            },
+            {
+                "parameters": {
+                    "httpMethod": "POST",
+                    "path": "5a09271d-d0ae-4d49-b058-48e5bb9a4567",
+                    "responseMode": "lastNode",
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.webhook",
+                "typeVersion": 2.1,
+                "position": [
+                    -512,
+                    -32
+                ],
+                "id": "c1ebb5cd-e1d8-4551-a57a-ec4bcd553afd",
+                "name": "Webhook",
+                "webhookId": "5a09271d-d0ae-4d49-b058-48e5bb9a4567"
+            },
+            {
+                "parameters": {
+                    "schemaType": "manual",
+                    "inputSchema": "{\n  \"name\": \"device_actions\",\n  \"description\": \"Executes actions on the user's portable device. Use this tool when the user requests to perform any physical action through their device, such as taking a photo. The tool returns a text response describing the result of the executed actions. Available actions: take_photo (captures a photo using the device camera).\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"actions\": {\n        \"type\": \"array\",\n        \"description\": \"List of actions to execute on the user's device. Currently supported: 'take_photo'.\",\n        \"items\": {\n          \"type\": \"string\",\n          \"enum\": [\"take_photo\"]\n        }\n      },\n      \"response_text\": {\n        \"type\": \"string\",\n        \"description\": \"A text message to display to the user describing what is being done or the result of the actions.\"\n      }\n    },\n    \"required\": [\"actions\", \"response_text\"]\n  }\n}",
+                    "autoFix": true
+                },
+                "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+                "typeVersion": 1.3,
+                "position": [
+                    544,
+                    240
+                ],
+                "id": "04a56c72-905c-4c5a-97e6-134774681f35",
+                "name": "Structured Output Parser"
+            },
+            {
+                "parameters": {
+                    "modelName": "models/gemini-2.0-flash",
+                    "options": {}
+                },
+                "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+                "typeVersion": 1,
+                "position": [
+                    544,
+                    416
+                ],
+                "id": "9f58b5c7-d942-4d02-b989-91963c84d7b5",
+                "name": "Google Gemini Chat Model1",
+                "credentials": {
+                    "googlePalmApi": {
+                        "id": "RjDkXeYmDOniElA6",
+                        "name": "Google Gemini(PaLM) Api account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "description": "Usa esta herramienta para mandarme texto por whatsapp",
+                    "workflowId": {
+                        "__rl": true,
+                        "value": "C1yLxMSWdlpaEDul",
+                        "mode": "list",
+                        "cachedResultUrl": "/workflow/C1yLxMSWdlpaEDul",
+                        "cachedResultName": "Send Message To Me"
+                    },
+                    "workflowInputs": {
+                        "mappingMode": "defineBelow",
+                        "value": {
+                            "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+                            "imgs": "={{ $('Extract Img').item.json.imgs.imgs }}",
+                            "img_indexs": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('img_indexs', `Array of image indices to include in the response. Leave empty if the user does not reference any specific image. The user will never refer to images by index number — instead, they will describe the content of the image (e.g., \"the one with the dog\", \"the photo of the street\"). You must match their description to the correct image index based on what you see in each image. Example: \"[0,3]\"`, 'string') }}"
+                        },
+                        "matchingColumns": [],
+                        "schema": [
+                            {
+                                "id": "Message",
+                                "displayName": "Message",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "canBeUsedToMatch": true,
+                                "type": "string",
+                                "removed": false
+                            },
+                            {
+                                "id": "imgs",
+                                "displayName": "imgs",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "canBeUsedToMatch": true,
+                                "type": "array",
+                                "removed": false
+                            },
+                            {
+                                "id": "img_indexs",
+                                "displayName": "img_indexs",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "canBeUsedToMatch": true,
+                                "removed": false
+                            }
+                        ],
+                        "attemptToConvertTypes": false,
+                        "convertFieldsToString": false
+                    }
+                },
+                "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+                "typeVersion": 2.2,
+                "position": [
+                    -80,
+                    320
+                ],
+                "id": "d955c26c-c665-4343-b5ed-f7056d269542",
+                "name": "Call 'Send Message To Me'"
+            },
+            {
+                "parameters": {
+                    "jsCode": "async function getAllImages(_this) {\n  const result = [];\n  let i = 0;\n\n  while (true) {\n    try {\n      const key = `img${i}`;\n      const buffer = await _this.helpers.getBinaryDataBuffer(0, key);\n      result.push(buffer.toString('base64'));\n      i++;\n    } catch (e) {\n      break;\n    }\n  }\n\n  return {imgs: result};\n}\n\nreturn {\n  query: {\n    input:$input.first().json.body.input,\n    id: $input.first().json.body.id\n  },\n  imgs: await getAllImages(this)\n}"
+                },
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
+                "position": [
+                    -272,
+                    -160
+                ],
+                "id": "d24deff4-f785-4895-9b45-90e40d8673f0",
+                "name": "Extract Img",
+                "executeOnce": true
+            }
+        ],
+        "connections": {
+            "Google Gemini Chat Model": {
+                "ai_languageModel": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "ai_languageModel",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "MongoDB Chat Memory": {
+                "ai_memory": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "ai_memory",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "AI Agent": {
+                "main": [
+                    []
+                ]
+            },
+            "Call 'Send Message To Emergency Contact'": {
+                "ai_tool": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "ai_tool",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Webhook": {
+                "main": [
+                    [
+                        {
+                            "node": "Extract Img",
+                            "type": "main",
+                            "index": 0
+                        },
+                        {
+                            "node": "AI Agent",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Structured Output Parser": {
+                "ai_outputParser": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "ai_outputParser",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Google Gemini Chat Model1": {
+                "ai_languageModel": [
+                    [
+                        {
+                            "node": "Structured Output Parser",
+                            "type": "ai_languageModel",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Call 'Send Message To Me'": {
+                "ai_tool": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "ai_tool",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Extract Img": {
+                "main": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "binaryMode": "separate",
+            "availableInMCP": false
+        },
+        "staticData": null,
+        "meta": {
+            "templateCredsSetupCompleted": true
+        },
+        "pinData": {},
+        "versionId": "4e7b2dfd-c361-4d4b-b59f-e5673b1ca109",
+        "activeVersionId": "162a1443-c0aa-4d15-b358-8cd22feaed02",
+        "versionCounter": 493,
+        "triggerCount": 1,
+        "shared": [
+            {
+                "updatedAt": "2026-04-18T05:11:37.977Z",
+                "createdAt": "2026-04-18T05:11:37.977Z",
+                "role": "workflow:owner",
+                "workflowId": "NTuCf58eysQnOGcX",
+                "projectId": "nxByLlxh0sEH3KsG",
+                "project": {
+                    "updatedAt": "2026-04-18T04:36:38.779Z",
+                    "createdAt": "2026-04-18T03:58:37.449Z",
+                    "id": "nxByLlxh0sEH3KsG",
+                    "name": "Diego Sebastian Cruz Cervantes <lmonkeys871@gmail.com>",
+                    "type": "personal",
+                    "icon": null,
+                    "description": null,
+                    "creatorId": "c0563680-55c8-4944-8a42-e7f4fa8c9260"
+                }
+            }
+        ],
+        "tags": [],
+        "activeVersion": {
+            "updatedAt": "2026-04-18T17:32:54.424Z",
+            "createdAt": "2026-04-18T17:30:25.720Z",
+            "versionId": "162a1443-c0aa-4d15-b358-8cd22feaed02",
+            "workflowId": "NTuCf58eysQnOGcX",
+            "nodes": [
+                {
+                    "parameters": {
+                        "promptType": "define",
+                        "text": "={{ $json.query.input || \"Realiza una analisis de esta vista actual del usuario. Describe lo que hay y si hay posible riesgo.\" }}",
+                        "hasOutputParser": true,
+                        "options": {
+                            "systemMessage": "You are a personal assistant designed to help visually impaired users stay aware of their surroundings and remain safe. You are their eyes. Speak naturally, be warm, concise, and descriptive. Always prioritize the user's safety.\n\n## Output format\n\nYou MUST always respond using the following JSON format. No exceptions. Every response must follow this structure:\n\n```json\n{\n  \"actions\": [],\n  \"response_text\": \"\"\n}\n```\n\n- `actions`: An array of action strings to execute on the device. If no action is needed, return an empty array `[]`.\n- `response_text`: A text message for the user. If no message is needed (e.g., only executing actions silently), return an empty string `\"\"`.\n\nBoth fields must always be present. Examples:\n\n**User asks a question (no device action needed):**\n```json\n{\n  \"actions\": [],\n  \"response_text\": \"Claro, puedo ayudarte con eso. ¿Quieres que tome una foto para ver tu entorno?\"\n}\n```\n\n**User asks to describe surroundings (photo needed):**\n```json\n{\n  \"actions\": [\"take_photo\"],\n  \"response_text\": \"Voy a tomar una foto para describir lo que hay a tu alrededor.\"\n}\n```\n\n**Danger detected (photo + emergency message):**\n```json\n{\n  \"actions\": [\"take_photo\", \"send_emergency_message\"],\n  \"response_text\": \"Detente. Hay un desnivel justo frente a ti. Estoy avisando a tus contactos de emergencia.\"\n}\n```\n\n**Only executing an action, no message needed:**\n```json\n{\n  \"actions\": [\"take_photo\"],\n  \"response_text\": \"\"\n}\n```\n\nDo NOT include any text outside of this JSON structure. Do NOT wrap it in markdown code blocks. Your entire response must be a single valid JSON object.\n\n## Your capabilities\n\nYou have access to the following tools to interact with the user's portable device:\n\n### 1. device_actions\n\nExecutes actions on the user's portable device.\n\n```json\n{\n  \"name\": \"device_actions\",\n  \"description\": \"Executes actions on the user's portable device. Use this tool when the user requests to perform any physical action through their device, such as taking a photo. The tool returns a text response describing the result of the executed actions. Available actions: take_photo (captures a photo using the device camera).\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"actions\": {\n        \"type\": \"array\",\n        \"description\": \"List of actions to execute on the user's device. Currently supported: 'take_photo'.\",\n        \"items\": {\n          \"type\": \"string\",\n          \"enum\": [\"take_photo\"]\n        }\n      },\n      \"response_text\": {\n        \"type\": \"string\",\n        \"description\": \"A text message to display to the user describing what is being done or the result of the actions.\"\n      }\n    },\n    \"required\": [\"actions\", \"response_text\"]\n  }\n}\n```\n\n**When to use:** Whenever you need visual context of the user's environment to assist them. If the user asks \"what's in front of me?\", \"where am I?\", \"describe my surroundings\", or any question that requires visual information, take a photo first, then describe what you see.\n\n### 2. send_emergency_message\n\nSends a message to the user's pre-configured emergency contacts.\n\n```json\n{\n  \"name\": \"send_emergency_message\",\n  \"description\": \"Sends an alert message to the user's emergency contacts. Use this tool whenever the user is in a risky or dangerous situation.\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"message\": {\n        \"type\": \"string\",\n        \"description\": \"The message to send to emergency contacts describing the user's situation and, if available, their location.\"\n      }\n    },\n    \"required\": [\"message\"]\n  }\n}\n```\n\n**When to use:** You MUST use this tool proactively whenever you determine the user is in a dangerous or risky situation. You do NOT need to ask for permission. Situations include but are not limited to:\n\n- The user is near traffic, a cliff, construction, or any physical hazard visible in a photo.\n- The user describes feeling lost, disoriented, or threatened.\n- You infer danger from the user's questions (e.g., \"I hear cars really close\", \"something smells like gas\", \"someone is following me\").\n- Any situation where a reasonable person would want someone else to know.\n\nWhen sending, include as much context as possible: what you see, what the user reported, and any location info available.\n\n## Behavior guidelines\n\n1. **Safety first.** If there is any doubt, err on the side of caution. Send the emergency message. A false alarm is always better than a missed danger.\n2. **Be proactive.** Don't wait for the user to ask. If a photo reveals danger, act immediately: warn the user clearly AND send the emergency message.\n3. **Be descriptive but concise.** The user cannot see. Describe things spatially: \"About two meters ahead of you, there is a set of stairs going down.\" Avoid vague language.\n4. **Be warm and calm.** The user relies on you. Never sound alarmed in a way that causes panic, but be direct and clear about dangers.\n5. **Ask for photos when needed.** If the user asks something you can't answer without visual context, use `device_actions` with `take_photo` before responding.\n6. **Never assume the environment is safe.** If you haven't seen a recent photo and the user is moving, suggest taking one.",
+                            "passthroughBinaryImages": true
+                        }
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.agent",
+                    "typeVersion": 3.1,
+                    "position": [
+                        -48,
+                        -32
+                    ],
+                    "id": "fccc98a0-1559-42db-8600-242f680e7a01",
+                    "name": "AI Agent"
+                },
+                {
+                    "parameters": {
+                        "modelName": "models/gemini-2.0-flash",
+                        "options": {}
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+                    "typeVersion": 1,
+                    "position": [
+                        -224,
+                        288
+                    ],
+                    "id": "ca0b0e93-ef12-4600-b8a9-9b766a82beaa",
+                    "name": "Google Gemini Chat Model",
+                    "credentials": {
+                        "googlePalmApi": {
+                            "id": "RjDkXeYmDOniElA6",
+                            "name": "Google Gemini(PaLM) Api account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "sessionIdType": "customKey",
+                        "sessionKey": "=\"{{ $json.query.id || $('Extract Img').item.json.query.id || $json.body.id || $('Webhook').item.json.body.id || \"default\"}}\"",
+                        "databaseName": "lazarusdb",
+                        "contextWindowLength": 15
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.memoryMongoDbChat",
+                    "typeVersion": 1,
+                    "position": [
+                        -48,
+                        176
+                    ],
+                    "id": "9c399b61-ce16-4fb3-82f2-2ff8b658fd29",
+                    "name": "MongoDB Chat Memory",
+                    "credentials": {
+                        "mongoDb": {
+                            "id": "ORkQJ5HelQUnfPYh",
+                            "name": "MongoDB account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "description": "Esta herramienta envía mensajes a los contactos de emergencia. Debes utilzarla cada que el usuario esté en una situación de riesgo. Debes ser proactivo. Si tú determinas que la situación es riesgosa - ya sea por la imagen o lo infieras por las preguntas que el usuario hace - debes ejecutar esta acción sin preguntar. ",
+                        "workflowId": {
+                            "__rl": true,
+                            "value": "EoPOqguu3HiNZZdg",
+                            "mode": "list",
+                            "cachedResultUrl": "/workflow/EoPOqguu3HiNZZdg",
+                            "cachedResultName": "Send Message To Emergency Contact"
+                        },
+                        "workflowInputs": {
+                            "mappingMode": "defineBelow",
+                            "value": {
+                                "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}"
+                            },
+                            "matchingColumns": [
+                                "Message"
+                            ],
+                            "schema": [
+                                {
+                                    "id": "Message",
+                                    "displayName": "Message",
+                                    "required": false,
+                                    "defaultMatch": false,
+                                    "display": true,
+                                    "canBeUsedToMatch": true,
+                                    "type": "string",
+                                    "removed": false
+                                }
+                            ],
+                            "attemptToConvertTypes": false,
+                            "convertFieldsToString": false
+                        }
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+                    "typeVersion": 2.2,
+                    "position": [
+                        224,
+                        400
+                    ],
+                    "id": "fef99c11-a659-4531-ba90-942b2304b3bf",
+                    "name": "Call 'Send Message To Emergency Contact'"
+                },
+                {
+                    "parameters": {
+                        "httpMethod": "POST",
+                        "path": "5a09271d-d0ae-4d49-b058-48e5bb9a4567",
+                        "responseMode": "lastNode",
+                        "options": {}
+                    },
+                    "type": "n8n-nodes-base.webhook",
+                    "typeVersion": 2.1,
+                    "position": [
+                        -512,
+                        -32
+                    ],
+                    "id": "c1ebb5cd-e1d8-4551-a57a-ec4bcd553afd",
+                    "name": "Webhook",
+                    "webhookId": "5a09271d-d0ae-4d49-b058-48e5bb9a4567"
+                },
+                {
+                    "parameters": {
+                        "schemaType": "manual",
+                        "inputSchema": "{\n  \"name\": \"device_actions\",\n  \"description\": \"Executes actions on the user's portable device. Use this tool when the user requests to perform any physical action through their device, such as taking a photo. The tool returns a text response describing the result of the executed actions. Available actions: take_photo (captures a photo using the device camera).\",\n  \"input_schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"actions\": {\n        \"type\": \"array\",\n        \"description\": \"List of actions to execute on the user's device. Currently supported: 'take_photo'.\",\n        \"items\": {\n          \"type\": \"string\",\n          \"enum\": [\"take_photo\"]\n        }\n      },\n      \"response_text\": {\n        \"type\": \"string\",\n        \"description\": \"A text message to display to the user describing what is being done or the result of the actions.\"\n      }\n    },\n    \"required\": [\"actions\", \"response_text\"]\n  }\n}",
+                        "autoFix": true
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+                    "typeVersion": 1.3,
+                    "position": [
+                        720,
+                        208
+                    ],
+                    "id": "04a56c72-905c-4c5a-97e6-134774681f35",
+                    "name": "Structured Output Parser"
+                },
+                {
+                    "parameters": {
+                        "model": {
+                            "__rl": true,
+                            "mode": "list",
+                            "value": "claude-sonnet-4-5-20250929",
+                            "cachedResultName": "Claude Sonnet 4.5"
+                        },
+                        "options": {}
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+                    "typeVersion": 1.3,
+                    "position": [
+                        -640,
+                        384
+                    ],
+                    "id": "d5d9e1f9-3bac-49ee-bd8e-285e03815cd1",
+                    "name": ".",
+                    "credentials": {
+                        "anthropicApi": {
+                            "id": "aB2UTaXxHD7j8JLR",
+                            "name": "Anthropic account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "modelName": "models/gemini-2.0-flash",
+                        "options": {}
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+                    "typeVersion": 1,
+                    "position": [
+                        800,
+                        544
+                    ],
+                    "id": "9f58b5c7-d942-4d02-b989-91963c84d7b5",
+                    "name": "Google Gemini Chat Model1",
+                    "credentials": {
+                        "googlePalmApi": {
+                            "id": "RjDkXeYmDOniElA6",
+                            "name": "Google Gemini(PaLM) Api account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "model": {
+                            "__rl": true,
+                            "value": "claude-3-haiku-20240307",
+                            "mode": "list",
+                            "cachedResultName": "Claude Haiku 3"
+                        },
+                        "options": {}
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+                    "typeVersion": 1.3,
+                    "position": [
+                        512,
+                        512
+                    ],
+                    "id": "636f0f19-fc81-4c37-afe2-84b6f54a6610",
+                    "name": ",",
+                    "credentials": {
+                        "anthropicApi": {
+                            "id": "aB2UTaXxHD7j8JLR",
+                            "name": "Anthropic account"
+                        }
+                    }
+                },
+                {
+                    "parameters": {
+                        "description": "Usa esta herramienta para mandarme texto por whatsapp",
+                        "workflowId": {
+                            "__rl": true,
+                            "value": "C1yLxMSWdlpaEDul",
+                            "mode": "list",
+                            "cachedResultUrl": "/workflow/C1yLxMSWdlpaEDul",
+                            "cachedResultName": "Send Message To Me"
+                        },
+                        "workflowInputs": {
+                            "mappingMode": "defineBelow",
+                            "value": {
+                                "Message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+                                "imgs": "={{ $('Extract Img').item.json.imgs.imgs }}",
+                                "img_indexs": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('img_indexs', `Array of image indices to include in the response. Leave empty if the user does not reference any specific image. The user will never refer to images by index number — instead, they will describe the content of the image (e.g., \"the one with the dog\", \"the photo of the street\"). You must match their description to the correct image index based on what you see in each image. Example: \"[0,3]\"`, 'string') }}"
+                            },
+                            "matchingColumns": [],
+                            "schema": [
+                                {
+                                    "id": "Message",
+                                    "displayName": "Message",
+                                    "required": false,
+                                    "defaultMatch": false,
+                                    "display": true,
+                                    "canBeUsedToMatch": true,
+                                    "type": "string",
+                                    "removed": false
+                                },
+                                {
+                                    "id": "imgs",
+                                    "displayName": "imgs",
+                                    "required": false,
+                                    "defaultMatch": false,
+                                    "display": true,
+                                    "canBeUsedToMatch": true,
+                                    "type": "array",
+                                    "removed": false
+                                },
+                                {
+                                    "id": "img_indexs",
+                                    "displayName": "img_indexs",
+                                    "required": false,
+                                    "defaultMatch": false,
+                                    "display": true,
+                                    "canBeUsedToMatch": true,
+                                    "removed": false
+                                }
+                            ],
+                            "attemptToConvertTypes": false,
+                            "convertFieldsToString": false
+                        }
+                    },
+                    "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+                    "typeVersion": 2.2,
+                    "position": [
+                        48,
+                        400
+                    ],
+                    "id": "d955c26c-c665-4343-b5ed-f7056d269542",
+                    "name": "Call 'Send Message To Me'"
+                },
+                {
+                    "parameters": {
+                        "jsCode": "async function getAllImages(_this) {\n  const result = [];\n  let i = 0;\n\n  while (true) {\n    try {\n      const key = `img${i}`;\n      const buffer = await _this.helpers.getBinaryDataBuffer(0, key);\n      result.push(buffer.toString('base64'));\n      i++;\n    } catch (e) {\n      break;\n    }\n  }\n\n  return {imgs: result};\n}\n\nreturn {\n  query: {\n    input:$input.first().json.body.input,\n    id: $input.first().json.body.id\n  },\n  imgs: await getAllImages(this)\n}"
+                    },
+                    "type": "n8n-nodes-base.code",
+                    "typeVersion": 2,
+                    "position": [
+                        -272,
+                        -160
+                    ],
+                    "id": "d24deff4-f785-4895-9b45-90e40d8673f0",
+                    "name": "Extract Img",
+                    "executeOnce": true
+                }
+            ],
+            "connections": {
+                "Google Gemini Chat Model": {
+                    "ai_languageModel": [
+                        []
+                    ]
+                },
+                "MongoDB Chat Memory": {
+                    "ai_memory": [
+                        [
+                            {
+                                "node": "AI Agent",
+                                "type": "ai_memory",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "AI Agent": {
+                    "main": [
+                        []
+                    ]
+                },
+                "Call 'Send Message To Emergency Contact'": {
+                    "ai_tool": [
+                        [
+                            {
+                                "node": "AI Agent",
+                                "type": "ai_tool",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Webhook": {
+                    "main": [
+                        [
+                            {
+                                "node": "Extract Img",
+                                "type": "main",
+                                "index": 0
+                            },
+                            {
+                                "node": "AI Agent",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Structured Output Parser": {
+                    "ai_outputParser": [
+                        [
+                            {
+                                "node": "AI Agent",
+                                "type": "ai_outputParser",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                ".": {
+                    "ai_languageModel": [
+                        [
+                            {
+                                "node": "AI Agent",
+                                "type": "ai_languageModel",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                ",": {
+                    "ai_languageModel": [
+                        [
+                            {
+                                "node": "Structured Output Parser",
+                                "type": "ai_languageModel",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Google Gemini Chat Model1": {
+                    "ai_languageModel": [
+                        []
+                    ]
+                },
+                "Call 'Send Message To Me'": {
+                    "ai_tool": [
+                        [
+                            {
+                                "node": "AI Agent",
+                                "type": "ai_tool",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                },
+                "Extract Img": {
+                    "main": [
+                        [
+                            {
+                                "node": "AI Agent",
+                                "type": "main",
+                                "index": 0
+                            }
+                        ]
+                    ]
+                }
+            },
+            "authors": "Diego Sebastian Cruz Cervantes",
+            "name": "Version 162a1443",
+            "description": "",
+            "autosaved": true,
+            "workflowPublishHistory": [
+                {
+                    "createdAt": "2026-04-18T17:32:54.420Z",
+                    "id": 43,
+                    "workflowId": "NTuCf58eysQnOGcX",
+                    "versionId": "162a1443-c0aa-4d15-b358-8cd22feaed02",
+                    "event": "activated",
+                    "userId": "c0563680-55c8-4944-8a42-e7f4fa8c9260"
+                }
+            ]
+        }
+    }
+]

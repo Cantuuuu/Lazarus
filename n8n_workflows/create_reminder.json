@@ -1,0 +1,154 @@
+[
+    {
+        "updatedAt": "2026-04-18T19:26:40.812Z",
+        "createdAt": "2026-04-18T19:19:59.732Z",
+        "id": "A6ph2OsKsjEIxFy6",
+        "name": "Create Reminder",
+        "description": null,
+        "active": false,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "workflowInputs": {
+                        "values": [
+                            {
+                                "name": "remind_at",
+                                "type": "object"
+                            },
+                            {
+                                "name": "reminder"
+                            }
+                        ]
+                    }
+                },
+                "type": "n8n-nodes-base.executeWorkflowTrigger",
+                "typeVersion": 1.1,
+                "position": [
+                    0,
+                    0
+                ],
+                "id": "e38c7855-5419-4201-aae5-6bcfddb94f00",
+                "name": "When Executed by Another Workflow"
+            },
+            {
+                "parameters": {
+                    "dataTableId": {
+                        "__rl": true,
+                        "value": "gOwZwwGpsn10xaz0",
+                        "mode": "list",
+                        "cachedResultName": "reminders",
+                        "cachedResultUrl": "/projects/nxByLlxh0sEH3KsG/datatables/gOwZwwGpsn10xaz0"
+                    },
+                    "columns": {
+                        "mappingMode": "defineBelow",
+                        "value": {
+                            "seen": false,
+                            "remind_at": "={{ new Date($json.remind_at).toDateTime() }}",
+                            "reminder": "={{ $json.reminder }}"
+                        },
+                        "matchingColumns": [],
+                        "schema": [
+                            {
+                                "id": "seen",
+                                "displayName": "seen",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "type": "boolean",
+                                "readOnly": false,
+                                "removed": false
+                            },
+                            {
+                                "id": "reminder",
+                                "displayName": "reminder",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "type": "string",
+                                "readOnly": false,
+                                "removed": false
+                            },
+                            {
+                                "id": "remind_at",
+                                "displayName": "remind_at",
+                                "required": false,
+                                "defaultMatch": false,
+                                "display": true,
+                                "type": "dateTime",
+                                "readOnly": false,
+                                "removed": false
+                            }
+                        ],
+                        "attemptToConvertTypes": false,
+                        "convertFieldsToString": false
+                    },
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.dataTable",
+                "typeVersion": 1.1,
+                "position": [
+                    208,
+                    0
+                ],
+                "id": "3d9816ba-a54a-4e93-8099-224f302c1c39",
+                "name": "Insert row"
+            }
+        ],
+        "connections": {
+            "When Executed by Another Workflow": {
+                "main": [
+                    [
+                        {
+                            "node": "Insert row",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "binaryMode": "separate",
+            "availableInMCP": false
+        },
+        "staticData": null,
+        "meta": null,
+        "pinData": {
+            "When Executed by Another Workflow": [
+                {
+                    "json": {
+                        "remind_at": "2026-04-18T19:26:06.623Z",
+                        "reminder": "Recuerda tomar tu tratamiento"
+                    }
+                }
+            ]
+        },
+        "versionId": "01e3b875-cb15-425c-9da3-49404f87d6bb",
+        "activeVersionId": null,
+        "versionCounter": 43,
+        "triggerCount": 0,
+        "shared": [
+            {
+                "updatedAt": "2026-04-18T19:19:59.732Z",
+                "createdAt": "2026-04-18T19:19:59.732Z",
+                "role": "workflow:owner",
+                "workflowId": "A6ph2OsKsjEIxFy6",
+                "projectId": "nxByLlxh0sEH3KsG",
+                "project": {
+                    "updatedAt": "2026-04-18T04:36:38.779Z",
+                    "createdAt": "2026-04-18T03:58:37.449Z",
+                    "id": "nxByLlxh0sEH3KsG",
+                    "name": "Diego Sebastian Cruz Cervantes <lmonkeys871@gmail.com>",
+                    "type": "personal",
+                    "icon": null,
+                    "description": null,
+                    "creatorId": "c0563680-55c8-4944-8a42-e7f4fa8c9260"
+                }
+            }
+        ],
+        "tags": [],
+        "activeVersion": null
+    }
+]
