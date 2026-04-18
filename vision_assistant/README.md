@@ -1,22 +1,11 @@
-# Lazarus — Asistente Visual para Personas con Discapacidad Visual
+# vision_assistant — Cliente Python de Lazarus
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
-![License](https://img.shields.io/badge/Licencia-MIT-green)
 ![Platform](https://img.shields.io/badge/Plataforma-Windows%20%7C%20Orange%20Pi%205-orange)
 
----
+Cliente en Python del sistema [Lazarus](../README.md). Captura video y audio del usuario, decide cuándo hay un momento relevante (de forma manual, automática por YOLO o por voz) y empaqueta el contexto para enviarlo al agente `lazarus_assistant` en n8n.
 
-## Descripción
-
-**Lazarus** es un asistente visual en tiempo real diseñado para personas con discapacidad visual. Utiliza la cámara del dispositivo para capturar momentos importantes del entorno, envía esas imágenes a **Gemini Vision** (mediante un webhook de n8n) y devuelve una descripción en audio generada por **ElevenLabs** (en desarrollo).
-
-El sistema puede activarse de tres formas:
-
-- **Manualmente** mediante un atajo de teclado global.
-- **Automáticamente** cuando YOLOv8 detecta objetos relevantes en la escena (personas, vehículos, semáforos, puertas, etc.).
-- **Por voz** pronunciando la palabra de activación "Lazarus" seguida de un comando.
-
-El objetivo es que una persona ciega pueda llevar el dispositivo encima y recibir descripciones auditivas de su entorno sin necesidad de interactuar con una pantalla.
+Para la descripción general del sistema completo (infraestructura, servicios externos, workflows de n8n), consulta el [README raíz](../README.md).
 
 ---
 
@@ -190,9 +179,9 @@ python scripts/export_yolo.py
 **Pasos:**
 
 ```bash
-# 1. Clonar el repositorio
+# 1. Clonar el repositorio y entrar al cliente
 git clone <url-del-repositorio>
-cd vision_assistant
+cd Lazarus/vision_assistant
 
 # 2. Instalar dependencias
 pip install -r requirements.txt
@@ -394,19 +383,6 @@ La selección del provider es automática: si CUDA está disponible se usa; de l
 
 ---
 
-## Roadmap
-
-- [x] Sistema de triggers (manual, YOLO, voz)
-- [x] Procesamiento offline de video con transcripción de audio
-- [x] Integración con webhook n8n (Gemini Vision)
-- [x] Heurísticas avanzadas de YOLO: metadata espacial, prioridades, cambio de escena, cambio de cantidad, resumen periódico, context frames
-- [ ] Respuesta en audio con ElevenLabs TTS
-- [ ] Integración n8n en tiempo real dentro de `main.py` (actualmente el dispatcher solo guarda a disco)
-- [ ] Exportación RKNN para NPU del Orange Pi 5
-- [ ] Wake word personalizado "Lazarus" con Porcupine
-
----
-
 ## Estructura del proyecto
 
 ```
@@ -456,3 +432,15 @@ vision_assistant/
 | `sounddevice` | Captura de audio del micrófono |
 | `pyyaml` | Carga de `config.yaml` |
 | `loguru` | Logging estructurado con rotación de archivos |
+
+---
+
+## Roadmap del cliente
+
+- [x] Sistema de triggers (manual, YOLO, voz)
+- [x] Procesamiento offline de video con transcripción de audio
+- [x] Heurísticas avanzadas de YOLO: metadata espacial, prioridades, cambio de escena, cambio de cantidad, resumen periódico, context frames
+- [ ] Integración n8n en tiempo real dentro de `main.py` (actualmente el dispatcher solo guarda a disco)
+- [ ] Reproducción local del audio devuelto por el agente (ElevenLabs)
+- [ ] Exportación RKNN para NPU del Orange Pi 5
+- [ ] Wake word personalizado "Lazarus" con Porcupine
