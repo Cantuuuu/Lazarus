@@ -1,9 +1,6 @@
 .env
 __pycache__/
 *.py[cod]
-*.rknn
 *.pt
-*.onnx
 .venv/
-models/
 *.log
