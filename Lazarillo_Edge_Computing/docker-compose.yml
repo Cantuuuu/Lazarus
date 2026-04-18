@@ -1,0 +1,34 @@
+services:
+
+  # Stream MJPEG mock — simula la Pi Zero W
+  stream-mock:
+    image: python:3.11-slim
+    volumes:
+      - ./tests/fixtures:/fixtures
+    command: >
+      sh -c "pip install -q opencv-python-headless numpy &&
+             python /fixtures/mock_stream.py"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Orquestador principal — FastAPI
+  lazarillo:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - ENV=development
+      - PI_ZERO_STREAM_URL=http://stream-mock:8080/stream.mjpg
+    volumes:
+      - .:/app
+    depends_on:
+      stream-mock:
+        condition: service_healthy
+    restart: unless-stopped
